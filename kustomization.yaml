@@ -1,0 +1,12 @@
+resources:
+  - https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/main/docs/deploy/cloud-controller-manager.yml
+
+patches:
+  - target:
+      kind: Deployment
+      name: talos-cloud-controller-manager
+      namespace: kube-system
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/args/3
+        value: --controllers=node-csr-approval

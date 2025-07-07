@@ -1,0 +1,37 @@
+name: Update Kustomized Manifest on Release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get latest release tag from SideroLabs repo
+        id: get_release
+        run: |
+          tag=$(curl -s https://api.github.com/repos/siderolabs/talos-cloud-controller-manager/releases/latest | jq -r .tag_name)
+          echo "LATEST_TAG=$tag" >> $GITHUB_ENV
+
+      - name: Update kustomization.yaml with latest tag
+        run: |
+          sed -i "s#https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/.*/docs/deploy/cloud-controller-manager.yml#https://raw.githubusercontent.com/siderolabs/talos-cloud-controller-manager/${{ env.LATEST_TAG }}/docs/deploy/cloud-controller-manager.yml#g" kustomization.yaml
+
+      - name: Setup kustomize
+        uses: imranismail/setup-kustomize@v3
+
+      - name: Run kustomize build
+        run: |
+          kustomize build . > talos-ccm.yaml
+
+      - name: Commit and push if changed
+        run: |
+          git config --global user.email "bot@users.noreply.github.com"
+          git config --global user.name "CI Bot"
+          git add talos-ccm.yaml kustomization.yaml
+          git diff --staged --quiet || (git commit -m "Update manifest from ${{ env.LATEST_TAG }}" && git push)
