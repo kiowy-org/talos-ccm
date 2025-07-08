@@ -10,3 +10,9 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/args/3
         value: --controllers=node-csr-approval
+      - op: add
+        path: /spec/template/spec/tolerations/-
+        value:
+          effect: NoSchedule
+          key: node.kubernetes.io/not-ready
+          operator: Exists
